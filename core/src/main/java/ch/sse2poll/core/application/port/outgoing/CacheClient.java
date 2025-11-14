@@ -1,4 +1,4 @@
-package ch.sse2poll.core.adapters;
+package ch.sse2poll.core.application.port.outgoing;
 
 import ch.sse2poll.core.entities.model.Envelope;
 

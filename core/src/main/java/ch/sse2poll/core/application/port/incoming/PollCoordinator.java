@@ -1,4 +1,4 @@
-package ch.sse2poll.core.usecase;
+package ch.sse2poll.core.application.port.incoming;
 
 import java.util.function.Supplier;
 

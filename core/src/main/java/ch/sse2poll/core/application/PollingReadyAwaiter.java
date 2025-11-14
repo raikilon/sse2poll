@@ -1,4 +1,4 @@
-package ch.sse2poll.core.usecase;
+package ch.sse2poll.core.application;
 
 import ch.sse2poll.core.entities.model.Ready;
 
@@ -6,7 +6,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
-public final class DefaultReadyAwaiter implements ReadyAwaiter {
+public final class PollingReadyAwaiter implements ReadyAwaiter {
     @Override
     public Optional<Ready<?>> waitReady(long waitMs, Supplier<Optional<Ready<?>>> tryConsumeReady) {
         long end = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(waitMs);

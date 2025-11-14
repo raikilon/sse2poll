@@ -1,8 +1,8 @@
-package ch.sse2poll.core.usecase;
+package ch.sse2poll.core.application;
 
-import ch.sse2poll.core.adapters.CacheClient;
+import ch.sse2poll.core.application.port.incoming.PollCoordinator;
+import ch.sse2poll.core.application.port.outgoing.CacheClient;
 import ch.sse2poll.core.entities.model.Envelope;
-import ch.sse2poll.core.entities.model.Pending;
 import ch.sse2poll.core.entities.model.Ready;
 
 import java.time.Duration;
@@ -23,14 +23,18 @@ public class CacheBackedPollCoordinator implements PollCoordinator {
     private static final Duration CACHE_TTL = Duration.ofMinutes(5);
 
     public CacheBackedPollCoordinator(CacheClient cacheClient) {
-        this(cacheClient, new UuidIdGenerator(), new DefaultKeyFactory(), new DefaultReadyAwaiter(), new VirtualThreadAsyncRunner());
+        this(cacheClient,
+                new UuidIdGenerator(),
+                new DefaultKeyFactory(),
+                new PollingReadyAwaiter(),
+                new VirtualThreadAsyncRunner());
     }
 
     public CacheBackedPollCoordinator(CacheClient cacheClient,
-                                      IdGenerator idGenerator,
-                                      KeyFactory keyFactory,
-                                      ReadyAwaiter readyAwaiter,
-                                      AsyncRunner asyncRunner) {
+            IdGenerator idGenerator,
+            KeyFactory keyFactory,
+            ReadyAwaiter readyAwaiter,
+            AsyncRunner asyncRunner) {
         this.cacheClient = cacheClient;
         this.idGenerator = idGenerator;
         this.keyFactory = keyFactory;
@@ -39,12 +43,12 @@ public class CacheBackedPollCoordinator implements PollCoordinator {
     }
 
     @Override
-    public Object handle(String namespace,
+    public Object handle(
+            String namespace,
             Supplier<Object> compute,
             RequestContextView requestContext) {
         String clientJobId = requestContext.clientJobId();
-        // TODO waitMs will be always be > 0
-        long waitMs = Math.max(0L, requestContext.waitMs());
+        long waitMs = requestContext.waitMs();
 
         if (clientJobId != null && !clientJobId.isBlank()) {
             return handlePoll(namespace, clientJobId, waitMs);
@@ -81,17 +85,18 @@ public class CacheBackedPollCoordinator implements PollCoordinator {
     }
 
     private Object returnReadyOrPending(String key, long waitMs) {
-        // TODO move key existence exception here
+        Optional<Envelope> cached = cacheClient.read(key, Object.class);
+        if (cached.isEmpty()) {
+            throw new IllegalArgumentException("Unknown job id: ");
+        }
+
         if (waitMs > 0) {
             Optional<Ready<?>> ready = waitForReady(key, waitMs);
             if (ready.isPresent()) {
                 return ready.get();
             }
         }
-        Optional<Envelope> cached = cacheClient.read(key, Object.class);
-        if (cached.isEmpty()) {
-            throw new IllegalArgumentException("Unknown job id: ");
-        }
+
         Envelope envelope = cached.get();
         if (envelope instanceof Ready<?>) {
             cacheClient.delete(key);

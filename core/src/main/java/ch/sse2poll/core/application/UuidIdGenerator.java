@@ -1,4 +1,4 @@
-package ch.sse2poll.core.usecase;
+package ch.sse2poll.core.application;
 
 import java.util.UUID;
 

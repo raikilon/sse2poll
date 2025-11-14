@@ -1,4 +1,4 @@
-package ch.sse2poll.core.usecase;
+package ch.sse2poll.core.application;
 
 import ch.sse2poll.core.entities.model.Ready;
 
