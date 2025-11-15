@@ -1,4 +1,4 @@
-package ch.sse2poll.core.application;
+package ch.sse2poll.core.engine.support.interfaces;
 
 import java.util.function.Consumer;
 import java.util.function.Supplier;

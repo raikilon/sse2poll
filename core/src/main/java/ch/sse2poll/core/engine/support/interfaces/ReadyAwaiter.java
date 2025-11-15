@@ -1,4 +1,4 @@
-package ch.sse2poll.core.application;
+package ch.sse2poll.core.engine.support.interfaces;
 
 import ch.sse2poll.core.entities.model.Ready;
 

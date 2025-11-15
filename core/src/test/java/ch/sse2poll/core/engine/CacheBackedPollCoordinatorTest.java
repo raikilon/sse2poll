@@ -1,14 +1,15 @@
+package ch.sse2poll.core.engine;
+
 import org.junit.jupiter.api.Test;
 
-import ch.sse2poll.core.application.AsyncRunner;
-import ch.sse2poll.core.application.CacheBackedPollCoordinator;
-import ch.sse2poll.core.application.IdGenerator;
-import ch.sse2poll.core.application.KeyFactory;
-import ch.sse2poll.core.application.ReadyAwaiter;
-import ch.sse2poll.core.application.port.incoming.PollCoordinator;
-import ch.sse2poll.core.application.port.outgoing.CacheClient;
 import ch.sse2poll.core.entities.model.Pending;
 import ch.sse2poll.core.entities.model.Ready;
+import ch.sse2poll.core.engine.port.incoming.PollCoordinator;
+import ch.sse2poll.core.engine.port.outgoing.CacheClient;
+import ch.sse2poll.core.engine.support.interfaces.AsyncRunner;
+import ch.sse2poll.core.engine.support.interfaces.IdGenerator;
+import ch.sse2poll.core.engine.support.interfaces.KeyFactory;
+import ch.sse2poll.core.engine.support.interfaces.ReadyAwaiter;
 import ch.sse2poll.core.entities.model.Envelope;
 
 import java.time.Duration;

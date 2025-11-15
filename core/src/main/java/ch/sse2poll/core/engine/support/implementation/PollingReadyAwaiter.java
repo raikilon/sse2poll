@@ -1,5 +1,6 @@
-package ch.sse2poll.core.application;
+package ch.sse2poll.core.engine.support.implementation;
 
+import ch.sse2poll.core.engine.support.interfaces.ReadyAwaiter;
 import ch.sse2poll.core.entities.model.Ready;
 
 import java.util.Optional;
