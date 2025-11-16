@@ -2,10 +2,6 @@ package ch.sse2poll.core.engine;
 
 import ch.sse2poll.core.engine.port.incoming.PollCoordinator;
 import ch.sse2poll.core.engine.port.outgoing.CacheClient;
-import ch.sse2poll.core.engine.support.implementation.DefaultKeyFactory;
-import ch.sse2poll.core.engine.support.implementation.PollingReadyAwaiter;
-import ch.sse2poll.core.engine.support.implementation.UuidIdGenerator;
-import ch.sse2poll.core.engine.support.implementation.VirtualThreadAsyncRunner;
 import ch.sse2poll.core.engine.support.interfaces.AsyncRunner;
 import ch.sse2poll.core.engine.support.interfaces.IdGenerator;
 import ch.sse2poll.core.engine.support.interfaces.KeyFactory;
@@ -29,14 +25,6 @@ public class CacheBackedPollCoordinator implements PollCoordinator {
     private final ReadyAwaiter readyAwaiter;
     private final AsyncRunner asyncRunner;
     private static final Duration CACHE_TTL = Duration.ofMinutes(5);
-
-    public CacheBackedPollCoordinator(CacheClient cacheClient) {
-        this(cacheClient,
-                new UuidIdGenerator(),
-                new DefaultKeyFactory(),
-                new PollingReadyAwaiter(),
-                new VirtualThreadAsyncRunner());
-    }
 
     public CacheBackedPollCoordinator(CacheClient cacheClient,
             IdGenerator idGenerator,

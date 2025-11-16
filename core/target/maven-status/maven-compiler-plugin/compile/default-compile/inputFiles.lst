@@ -3,7 +3,9 @@ C:\Users\Noli\dev\sse2poll\core\src\main\java\ch\sse2poll\core\framework\annotat
 C:\Users\Noli\dev\sse2poll\core\src\main\java\ch\sse2poll\core\engine\port\incoming\PollCoordinator.java
 C:\Users\Noli\dev\sse2poll\core\src\main\java\ch\sse2poll\core\engine\port\outgoing\CacheClient.java
 C:\Users\Noli\dev\sse2poll\core\src\main\java\ch\sse2poll\core\engine\support\implementation\PollingReadyAwaiter.java
+C:\Users\Noli\dev\sse2poll\core\src\main\java\ch\sse2poll\core\framework\config\Sse2PollAutoConfiguration.java
 C:\Users\Noli\dev\sse2poll\core\src\main\java\ch\sse2poll\core\entities\model\Envelope.java
+C:\Users\Noli\dev\sse2poll\core\src\main\java\ch\sse2poll\core\framework\cache\CaffeineCacheClient.java
 C:\Users\Noli\dev\sse2poll\core\src\main\java\ch\sse2poll\core\engine\support\interfaces\ReadyAwaiter.java
 C:\Users\Noli\dev\sse2poll\core\src\main\java\ch\sse2poll\core\entities\model\Pending.java
 C:\Users\Noli\dev\sse2poll\core\src\main\java\ch\sse2poll\core\entities\model\Ready.java
