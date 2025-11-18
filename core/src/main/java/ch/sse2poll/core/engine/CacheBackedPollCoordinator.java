@@ -62,7 +62,7 @@ public class CacheBackedPollCoordinator implements PollCoordinator {
         String jobId = idGenerator.newId();
         String key = keyFactory.build(namespace, jobId);
 
-        cacheClient.writePending(key, CACHE_TTL);
+        cacheClient.writePending(key, jobId, CACHE_TTL);
 
         asyncRunner.run(compute, payload -> cacheClient.writeReady(key, payload, CACHE_TTL));
 

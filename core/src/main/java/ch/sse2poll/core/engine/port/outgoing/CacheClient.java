@@ -12,7 +12,7 @@ public interface CacheClient {
 
     Optional<Envelope> read(String key, Class<?> bodyType);
 
-    void writePending(String key, Duration ttl);
+    void writePending(String key, String jobId, Duration ttl);
 
     void writeReady(String key, Object payload, Duration ttl);
 

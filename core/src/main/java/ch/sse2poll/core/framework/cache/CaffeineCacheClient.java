@@ -51,8 +51,8 @@ public final class CaffeineCacheClient implements CacheClient {
     }
 
     @Override
-    public void writePending(String key, Duration ttl) {
-        cache.put(key, StoredEnvelope.pending(ticker.read(), ttl));
+    public void writePending(String key, String jobId, Duration ttl) {
+        cache.put(key, StoredEnvelope.pending(jobId, ticker.read(), ttl));
     }
 
     @Override
@@ -83,8 +83,8 @@ public final class CaffeineCacheClient implements CacheClient {
             return remaining <= 0 ? 0 : remaining;
         }
 
-        static StoredEnvelope pending(long nowNanos, Duration ttl) {
-            return new StoredEnvelope(new Pending(), expiresAt(nowNanos, ttl));
+        static StoredEnvelope pending(String jobId, long nowNanos, Duration ttl) {
+            return new StoredEnvelope(new Pending(jobId), expiresAt(nowNanos, ttl));
         }
 
         static StoredEnvelope ready(long completedAtMillis, Object payload, long nowNanos, Duration ttl) {

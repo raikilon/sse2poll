@@ -24,11 +24,13 @@ class CaffeineCacheClientTest {
     void givenPendingEntry_whenReadBeforeExpiry_thenReturnsPending() {
         Context ctx = Context.fixedClock(Instant.parse("2024-01-01T00:00:00Z"));
 
-        ctx.client.writePending("key", Duration.ofSeconds(5));
+        ctx.client.writePending("key", "job-123", Duration.ofSeconds(5));
 
         Optional<Envelope> value = ctx.client.read("key", Object.class);
         assertTrue(value.isPresent());
         assertTrue(value.get() instanceof Pending);
+        Pending pending = (Pending) value.get();
+        assertEquals("job-123", pending.jobId());
 
         ctx.ticker.advanceSeconds(6);
         assertTrue(ctx.client.read("key", Object.class).isEmpty());
@@ -52,7 +54,7 @@ class CaffeineCacheClientTest {
     void givenEntry_whenDeleted_thenCannotBeRead() {
         Context ctx = Context.fixedClock(Instant.parse("2024-03-01T00:00:00Z"));
 
-        ctx.client.writePending("job", Duration.ofSeconds(30));
+        ctx.client.writePending("job", "job-777", Duration.ofSeconds(30));
         ctx.client.delete("job");
 
         assertTrue(ctx.client.read("job", Object.class).isEmpty());

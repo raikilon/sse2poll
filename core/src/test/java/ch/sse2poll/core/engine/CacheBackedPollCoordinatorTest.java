@@ -131,8 +131,8 @@ class CacheBackedPollCoordinatorTest {
             }
 
             @Override
-            public void writePending(String key, Duration ttl) {
-                store.put(key, new Pending());
+            public void writePending(String key, String jobId, Duration ttl) {
+                store.put(key, new Pending(jobId));
             }
 
             @Override
