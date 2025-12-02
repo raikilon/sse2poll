@@ -9,7 +9,6 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Expiry;
 import com.github.benmanes.caffeine.cache.Ticker;
 
-import java.time.Clock;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
@@ -21,17 +20,15 @@ import java.util.concurrent.TimeUnit;
 public final class CaffeineCacheClient implements CacheClient {
 
     private final Cache<String, StoredEnvelope> cache;
-    private final Clock clock;
     private final Ticker ticker;
 
     public CaffeineCacheClient(long maximumSize) {
         Ticker ticker = Ticker.systemTicker();
-        this(buildCache(maximumSize, ticker), Clock.systemUTC(), ticker);
+        this(buildCache(maximumSize, ticker), ticker);
     }
 
-    public CaffeineCacheClient(Cache<String, StoredEnvelope> cache, Clock clock, Ticker ticker) {
+    public CaffeineCacheClient(Cache<String, StoredEnvelope> cache, Ticker ticker) {
         this.cache = Objects.requireNonNull(cache, "cache");
-        this.clock = Objects.requireNonNull(clock, "clock");
         this.ticker = Objects.requireNonNull(ticker, "ticker");
     }
 
@@ -56,8 +53,8 @@ public final class CaffeineCacheClient implements CacheClient {
     }
 
     @Override
-    public void writeReady(String key, Object payload, Duration ttl) {
-        cache.put(key, StoredEnvelope.ready(clock.millis(), payload, ticker.read(), ttl));
+    public <T> void writeReady(String key, T payload, Duration ttl) {
+        cache.put(key, StoredEnvelope.ready(payload, ticker.read(), ttl));
     }
 
     @Override
@@ -87,8 +84,8 @@ public final class CaffeineCacheClient implements CacheClient {
             return new StoredEnvelope(new Pending(jobId), expiresAt(nowNanos, ttl));
         }
 
-        static StoredEnvelope ready(long completedAtMillis, Object payload, long nowNanos, Duration ttl) {
-            return new StoredEnvelope(new Ready<>(completedAtMillis, payload), expiresAt(nowNanos, ttl));
+        static StoredEnvelope ready(Object payload, long nowNanos, Duration ttl) {
+            return new StoredEnvelope(new Ready<>(payload), expiresAt(nowNanos, ttl));
         }
 
         private static long expiresAt(long nowNanos, Duration ttl) {

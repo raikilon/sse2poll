@@ -9,10 +9,10 @@ import java.util.function.Supplier;
 
 public final class PollingReadyAwaiter implements ReadyAwaiter {
     @Override
-    public Optional<Ready<?>> waitReady(long waitMs, Supplier<Optional<Ready<?>>> tryConsumeReady) {
+    public <T> Optional<Ready<T>> waitReady(long waitMs, Supplier<Optional<Ready<T>>> tryConsumeReady) {
         long end = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(waitMs);
         while (System.nanoTime() < end) {
-            Optional<Ready<?>> res = tryConsumeReady.get();
+            Optional<Ready<T>> res = tryConsumeReady.get();
             if (res.isPresent()) {
                 return res;
             }

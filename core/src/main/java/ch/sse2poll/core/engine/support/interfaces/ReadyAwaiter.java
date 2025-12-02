@@ -6,5 +6,5 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 public interface ReadyAwaiter {
-    Optional<Ready<?>> waitReady(long waitMs, Supplier<Optional<Ready<?>>> tryConsumeReady);
+    <T> Optional<Ready<T>> waitReady(long waitMs, Supplier<Optional<Ready<T>>> tryConsumeReady);
 }

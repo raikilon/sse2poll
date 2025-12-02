@@ -7,9 +7,10 @@ import java.util.function.Supplier;
  */
 public interface PollCoordinator {
 
-    Object handle(String namespace,
-                  Supplier<Object> compute,
-                  RequestContextView requestContext);
+    <T> T handle(String namespace,
+                 Supplier<T> compute,
+                 Class<T> responseType,
+                 RequestContextView requestContext);
 
     /**
      * Represents HTTP request metadata needed by the coordinator (headers, query params, etc.).
@@ -19,4 +20,3 @@ public interface PollCoordinator {
         long waitMs();
     }
 }
-

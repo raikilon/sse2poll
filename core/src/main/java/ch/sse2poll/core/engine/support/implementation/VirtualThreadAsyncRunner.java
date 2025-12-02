@@ -8,10 +8,10 @@ import ch.sse2poll.core.engine.support.interfaces.AsyncRunner;
 
 public final class VirtualThreadAsyncRunner implements AsyncRunner {
     @Override
-    public void run(Supplier<Object> compute, Consumer<Object> onSuccess) {
+    public <T> void run(Supplier<T> compute, Consumer<T> onSuccess) {
         Thread.ofVirtual().start(() -> {
             try {
-                Object payload = compute.get();
+                T payload = compute.get();
                 onSuccess.accept(payload);
             } catch (Throwable t) {
                 // swallow errors; callers handle via cache TTL
@@ -19,4 +19,3 @@ public final class VirtualThreadAsyncRunner implements AsyncRunner {
         });
     }
 }
-

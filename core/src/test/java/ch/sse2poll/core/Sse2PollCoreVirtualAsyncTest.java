@@ -1,8 +1,7 @@
 package ch.sse2poll.core;
 
+import ch.sse2poll.core.engine.exception.PendingJobException;
 import ch.sse2poll.core.engine.support.interfaces.IdGenerator;
-import ch.sse2poll.core.entities.model.Pending;
-import ch.sse2poll.core.entities.model.Ready;
 import ch.sse2poll.core.framework.annotation.PolledGet;
 import ch.sse2poll.core.framework.config.Sse2PollAutoConfiguration;
 import ch.sse2poll.core.framework.web.PolledGetAspect;
@@ -26,8 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringJUnitConfig(Sse2PollCoreVirtualAsyncTest.TestConfig.class)
 class Sse2PollCoreVirtualAsyncTest {
@@ -48,9 +46,7 @@ class Sse2PollCoreVirtualAsyncTest {
     @Test
     void givenVirtualThreadAsyncRunner_WhenPollingWithWait_ThenReadyArrivesAfterComputationCompletes() throws Exception {
         context.request(null, 0);
-        Object kickoff = context.controller.get();
-
-        assertTrue(kickoff instanceof Pending);
+        assertThrows(PendingJobException.class, () -> context.controller.get());
         String jobId = context.idGenerator.lastGenerated();
 
         context.controller.awaitInvocation();
@@ -66,8 +62,8 @@ class Sse2PollCoreVirtualAsyncTest {
         completer.start();
 
         context.request(jobId, 1000);
-        Ready<?> ready = assertInstanceOf(Ready.class, context.controller.get());
-        assertEquals("payload", ready.payload());
+        Object payload = context.controller.get();
+        assertEquals("payload", payload);
         context.controller.awaitCompletion();
 
         completer.join();

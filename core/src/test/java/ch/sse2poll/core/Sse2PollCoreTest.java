@@ -1,9 +1,9 @@
 package ch.sse2poll.core;
 
+import ch.sse2poll.core.engine.exception.PendingJobException;
+import ch.sse2poll.core.engine.exception.UnknownJobException;
 import ch.sse2poll.core.engine.support.interfaces.AsyncRunner;
 import ch.sse2poll.core.engine.support.interfaces.IdGenerator;
-import ch.sse2poll.core.entities.model.Pending;
-import ch.sse2poll.core.entities.model.Ready;
 import ch.sse2poll.core.framework.annotation.PolledGet;
 import ch.sse2poll.core.framework.config.Sse2PollAutoConfiguration;
 import ch.sse2poll.core.framework.web.PolledGetAspect;
@@ -31,9 +31,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringJUnitConfig(Sse2PollCoreTest.TestConfig.class)
 class Sse2PollCoreTest {
@@ -55,10 +53,9 @@ class Sse2PollCoreTest {
     void givenKickoff_WhenInvokingController_ThenPendingReturnedAndJobScheduled() {
         context.request(null, 0);
 
-        Object response = context.controller.get();
+        PendingJobException ex = assertThrows(PendingJobException.class, () -> context.controller.get());
 
-        assertTrue(response instanceof Pending);
-        assertEquals("job-1", context.idGenerator.lastGenerated());
+        assertEquals("job-1", ex.getJobId());
         assertEquals(1, context.asyncRunner.pendingTasks());
         assertEquals(0, context.controller.invocationCount());
     }
@@ -66,18 +63,17 @@ class Sse2PollCoreTest {
     @Test
     void givenPollAfterCompletion_WhenInvokingController_ThenReadyReturnedAndCacheCleared() {
         context.request(null, 0);
-        context.controller.get();
+        assertThrows(PendingJobException.class, () -> context.controller.get());
         String jobId = context.idGenerator.lastGenerated();
         context.asyncRunner.completeNext();
 
         context.request(jobId, 0);
-        Ready<?> ready = assertInstanceOf(Ready.class, context.controller.get());
-        assertEquals("payload", ready.payload());
+        Object payload = context.controller.get();
+        assertEquals("payload", payload);
         assertEquals(1, context.controller.invocationCount());
 
         context.request(jobId, 0);
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> context.controller.get());
-        assertTrue(ex.getMessage().contains("Unknown job id"));
+        assertThrows(UnknownJobException.class, () -> context.controller.get());
     }
 
     @Test
@@ -86,8 +82,8 @@ class Sse2PollCoreTest {
         worker.start();
 
         context.request(null, 500);
-        Ready<?> ready = assertInstanceOf(Ready.class, context.controller.get());
-        assertEquals("payload", ready.payload());
+        Object payload = context.controller.get();
+        assertEquals("payload", payload);
         assertEquals(1, context.controller.invocationCount());
 
         worker.join();
@@ -111,7 +107,7 @@ class Sse2PollCoreTest {
 
         @Bean
         @Primary
-    FakeAsyncRunner fakeAsyncRunner() {
+        FakeAsyncRunner fakeAsyncRunner() {
             return new FakeAsyncRunner();
         }
 
@@ -199,10 +195,10 @@ class Sse2PollCoreTest {
      * Fake AsyncRunner that queues computations until tests decide to execute them.
      */
     static class FakeAsyncRunner implements AsyncRunner {
-        private final BlockingQueue<Task> tasks = new LinkedBlockingQueue<>();
+        private final BlockingQueue<Task<?>> tasks = new LinkedBlockingQueue<>();
 
         @Override
-        public void run(Supplier<Object> compute, Consumer<Object> onSuccess) {
+        public <T> void run(Supplier<T> compute, Consumer<T> onSuccess) {
             tasks.add(new Task(compute, onSuccess));
         }
 
@@ -211,7 +207,7 @@ class Sse2PollCoreTest {
         }
 
         void completeNext() {
-            Task task = tasks.poll();
+            Task<?> task = tasks.poll();
             if (task == null) {
                 throw new IllegalStateException("No async tasks scheduled");
             }
@@ -220,7 +216,7 @@ class Sse2PollCoreTest {
 
         void completeNextBlocking(Duration timeout) {
             try {
-                Task task = tasks.poll(timeout.toMillis(), TimeUnit.MILLISECONDS);
+                Task<?> task = tasks.poll(timeout.toMillis(), TimeUnit.MILLISECONDS);
                 if (task == null) {
                     throw new IllegalStateException("Timed out waiting for async task");
                 }
@@ -235,9 +231,9 @@ class Sse2PollCoreTest {
             tasks.clear();
         }
 
-        private record Task(Supplier<Object> compute, Consumer<Object> onSuccess) {
+        private record Task<T>(Supplier<T> compute, Consumer<T> onSuccess) {
             void run() {
-                Object payload = compute.get();
+                T payload = compute.get();
                 onSuccess.accept(payload);
             }
         }

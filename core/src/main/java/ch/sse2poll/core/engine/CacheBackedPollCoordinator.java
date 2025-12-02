@@ -6,7 +6,10 @@ import ch.sse2poll.core.engine.support.interfaces.AsyncRunner;
 import ch.sse2poll.core.engine.support.interfaces.IdGenerator;
 import ch.sse2poll.core.engine.support.interfaces.KeyFactory;
 import ch.sse2poll.core.engine.support.interfaces.ReadyAwaiter;
+import ch.sse2poll.core.engine.exception.PendingJobException;
+import ch.sse2poll.core.engine.exception.UnknownJobException;
 import ch.sse2poll.core.entities.model.Envelope;
+import ch.sse2poll.core.entities.model.Pending;
 import ch.sse2poll.core.entities.model.Ready;
 
 import java.time.Duration;
@@ -39,26 +42,27 @@ public class CacheBackedPollCoordinator implements PollCoordinator {
     }
 
     @Override
-    public Object handle(
+    public <T> T handle(
             String namespace,
-            Supplier<Object> compute,
+            Supplier<T> compute,
+            Class<T> responseType,
             RequestContextView requestContext) {
         String clientJobId = requestContext.clientJobId();
         long waitMs = requestContext.waitMs();
 
         if (clientJobId != null && !clientJobId.isBlank()) {
-            return handlePoll(namespace, clientJobId, waitMs);
+            return handlePoll(namespace, clientJobId, waitMs, responseType);
         }
-        return handleKickoff(namespace, waitMs, compute);
+        return handleKickoff(namespace, waitMs, compute, responseType);
     }
 
-    private Object handlePoll(String namespace, String jobId, long waitMs) {
+    private <T> T handlePoll(String namespace, String jobId, long waitMs, Class<T> responseType) {
         String key = keyFactory.build(namespace, jobId);
 
-        return returnReadyOrPending(key, waitMs);
+        return returnReadyOrPending(key, jobId, waitMs, responseType);
     }
 
-    private Object handleKickoff(String namespace, long waitMs, Supplier<Object> compute) {
+    private <T> T handleKickoff(String namespace, long waitMs, Supplier<T> compute, Class<T> responseType) {
         String jobId = idGenerator.newId();
         String key = keyFactory.build(namespace, jobId);
 
@@ -66,39 +70,56 @@ public class CacheBackedPollCoordinator implements PollCoordinator {
 
         asyncRunner.run(compute, payload -> cacheClient.writeReady(key, payload, CACHE_TTL));
 
-        return returnReadyOrPending(key, waitMs);
+        return returnReadyOrPending(key, jobId, waitMs, responseType);
     }
 
-    private Optional<Ready<?>> waitForReady(String key, long waitMs) {
+    private <T> Optional<Ready<T>> waitForReady(String key, long waitMs, Class<T> responseType) {
         return readyAwaiter.waitReady(waitMs, () -> {
             Optional<Envelope> again = cacheClient.read(key, Object.class);
             if (again.isPresent() && again.get() instanceof Ready<?> r) {
-                cacheClient.delete(key);
-                return Optional.of((Ready<?>) r);
+                return Optional.of(castReady(r, responseType));
             }
             return Optional.empty();
         });
     }
 
-    private Object returnReadyOrPending(String key, long waitMs) {
+    private <T> T returnReadyOrPending(String key, String jobId, long waitMs, Class<T> responseType) {
         Optional<Envelope> cached = cacheClient.read(key, Object.class);
         if (cached.isEmpty()) {
-            throw new IllegalArgumentException("Unknown job id: ");
+            throw new UnknownJobException(jobId);
         }
 
         if (waitMs > 0) {
-            Optional<Ready<?>> ready = waitForReady(key, waitMs);
+            Optional<Ready<T>> ready = waitForReady(key, waitMs, responseType);
             if (ready.isPresent()) {
-                return ready.get();
+                return consumeReady(key, ready.get());
             }
         }
 
         Envelope envelope = cached.get();
-        if (envelope instanceof Ready<?>) {
-            cacheClient.delete(key);
+        if (envelope instanceof Ready<?> ready) {
+            return consumeReady(key, castReady(ready, responseType));
+        }
+        if (envelope instanceof Pending pending) {
+            throw new PendingJobException(pending.jobId());
         }
 
-        return envelope;
+        throw new IllegalStateException("Unsupported envelope type: " + envelope.getClass().getName());
+    }
+
+    private <T> T consumeReady(String key, Ready<T> ready) {
+        cacheClient.delete(key);
+        return ready.payload();
+    }
+
+    private <T> Ready<T> castReady(Ready<?> ready, Class<T> responseType) {
+        Object payload = ready.payload();
+        if (!responseType.isInstance(payload)) {
+            throw new ClassCastException("Cached payload of type "
+                    + (payload == null ? "null" : payload.getClass().getName())
+                    + " does not match expected " + responseType.getName());
+        }
+        return new Ready<>(responseType.cast(payload));
     }
 
 }

@@ -12,13 +12,16 @@ import ch.sse2poll.core.engine.support.interfaces.IdGenerator;
 import ch.sse2poll.core.engine.support.interfaces.KeyFactory;
 import ch.sse2poll.core.engine.support.interfaces.ReadyAwaiter;
 import ch.sse2poll.core.framework.cache.CaffeineCacheClient;
+import ch.sse2poll.core.framework.web.PolledExceptionHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 
 /**
  * Spring configuration that wires the {@link CacheBackedPollCoordinator} with default collaborators.
  */
 @Configuration
+@Import(PolledExceptionHandler.class)
 public class Sse2PollAutoConfiguration {
 
     @Bean

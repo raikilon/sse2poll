@@ -28,13 +28,14 @@ public class PolledGetAspect {
     }
 
     @Around("@annotation(polledGet)")
-    public Object orchestrate(ProceedingJoinPoint joinPoint, PolledGet polledGet) {
+    public <T> T orchestrate(ProceedingJoinPoint joinPoint, PolledGet polledGet) {
         MethodSignature methodSignature = (MethodSignature) joinPoint.getSignature();
         var method = methodSignature.getMethod();
         String namespace = method.getDeclaringClass().getSimpleName() + "#" + method.getName();
         PollCoordinator.RequestContextView requestContext = resolveRequestContext();
 
-        return pollCoordinator.handle(namespace, () -> proceed(joinPoint), requestContext);
+        Class<T> returnType = resolveReturnType(methodSignature);
+        return pollCoordinator.handle(namespace, () -> proceed(joinPoint), returnType, requestContext);
     }
 
     private PollCoordinator.RequestContextView resolveRequestContext() {
@@ -75,12 +76,35 @@ public class PolledGetAspect {
         }
     }
 
-    private Object proceed(ProceedingJoinPoint joinPoint) {
+    @SuppressWarnings("unchecked")
+    private <T> Class<T> resolveReturnType(MethodSignature methodSignature) {
+        Class<?> raw = methodSignature.getReturnType();
+        if (raw.isPrimitive()) {
+            return (Class<T>) wrapPrimitive(raw);
+        }
+        return (Class<T>) raw;
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> T proceed(ProceedingJoinPoint joinPoint) {
         try {
-            return joinPoint.proceed();
+            return (T) joinPoint.proceed();
         } catch (Throwable throwable) {
             throw new IllegalStateException("Failed to execute polled computation", throwable);
         }
+    }
+
+    private Class<?> wrapPrimitive(Class<?> primitive) {
+        if (primitive == boolean.class) return Boolean.class;
+        if (primitive == byte.class) return Byte.class;
+        if (primitive == short.class) return Short.class;
+        if (primitive == int.class) return Integer.class;
+        if (primitive == long.class) return Long.class;
+        if (primitive == float.class) return Float.class;
+        if (primitive == double.class) return Double.class;
+        if (primitive == char.class) return Character.class;
+        if (primitive == void.class) return Void.class;
+        return primitive;
     }
 
     private record ImmutableRequestContext(String clientJobId, long waitMs)

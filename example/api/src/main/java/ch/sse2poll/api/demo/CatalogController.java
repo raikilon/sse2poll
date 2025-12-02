@@ -29,7 +29,7 @@ public class CatalogController {
      */
     @PolledGet
     @GetMapping("/products/{productId}")
-    public Object getProduct(@PathVariable String productId) {
+    public ProductDetails getProduct(@PathVariable String productId) {
         return catalogManager.findProduct(productId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Unknown product " + productId));

@@ -2,6 +2,8 @@ package ch.sse2poll.core.engine;
 
 import org.junit.jupiter.api.Test;
 
+import ch.sse2poll.core.engine.exception.PendingJobException;
+import ch.sse2poll.core.engine.exception.UnknownJobException;
 import ch.sse2poll.core.entities.model.Pending;
 import ch.sse2poll.core.entities.model.Ready;
 import ch.sse2poll.core.engine.port.incoming.PollCoordinator;
@@ -24,18 +26,17 @@ import static org.junit.jupiter.api.Assertions.*;
 class CacheBackedPollCoordinatorTest {
 
     @Test
-    void givenNewJobAndAwaitEnabled_WhenComputeCompletesQuickly_ThenReturnsReadyAndDeletesKey() {
+    void givenNewJobAndAwaitEnabled_WhenComputeCompletesQuickly_ThenReturnsPayloadAndDeletesKey() {
         Context ctx = Context.immediateDefaults("jid-1");
-        Object res = ctx.coordinator().handle("ns", () -> "OK", Context.rc(null, 200));
+        Object res = ctx.coordinator().handle("ns", () -> "OK", String.class, Context.rc(null, 200));
 
-        assertTrue(res instanceof Ready<?>);
-        assertEquals("OK", ((Ready<?>) res).payload());
+        assertEquals("OK", res);
         assertEquals("ns:jid-1", ctx.cache.lastDeletedKey);
         assertTrue(ctx.cache.read("ns:jid-1", Object.class).isEmpty());
     }
 
     @Test
-    void givenNewJobAndNoWait_WhenComputeDeferred_ThenReturnsPendingAndKeepsKey() {
+    void givenNewJobAndNoWait_WhenComputeDeferred_ThenThrowsPendingAndKeepsKey() {
         Context.InMemoryCache cache = new Context.InMemoryCache();
         Context ctx = new Context(
                 cache,
@@ -44,9 +45,10 @@ class CacheBackedPollCoordinatorTest {
                 new Context.OneShotReadyAwaiter(),
                 new Context.DeferringAsyncRunner());
 
-        Object res = ctx.coordinator().handle("ns", () -> "LATE", Context.rc(null, 0));
+        PendingJobException ex = assertThrows(PendingJobException.class,
+                () -> ctx.coordinator().handle("ns", () -> "LATE", String.class, Context.rc(null, 0)));
+        assertEquals("jid-2", ex.getJobId());
 
-        assertTrue(res instanceof Pending);
         Optional<Envelope> v = cache.read("ns:jid-2", Object.class);
         assertTrue(v.isPresent());
         assertTrue(v.get() instanceof Pending);
@@ -56,13 +58,13 @@ class CacheBackedPollCoordinatorTest {
     @Test
     void givenMissingKey_WhenPoll_ThenThrowsUnknownJobId() {
         Context ctx = Context.immediateDefaults("unused");
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> ctx.coordinator().handle("ns", () -> "IGNORED", Context.rc("missing", 0)));
-        assertTrue(ex.getMessage().startsWith("Unknown job id"));
+        UnknownJobException ex = assertThrows(UnknownJobException.class,
+                () -> ctx.coordinator().handle("ns", () -> "IGNORED", String.class, Context.rc("missing", 0)));
+        assertEquals("missing", ex.getJobId());
     }
 
     @Test
-    void givenReadyInCache_WhenPoll_ThenReturnsReadyAndDeletesKey() {
+    void givenReadyInCache_WhenPoll_ThenReturnsPayloadAndDeletesKey() {
         Context.InMemoryCache cache = new Context.InMemoryCache();
         Context.SimpleKeyFactory keys = new Context.SimpleKeyFactory();
         String key = keys.build("ns", "jid-3");
@@ -75,10 +77,9 @@ class CacheBackedPollCoordinatorTest {
                 new Context.OneShotReadyAwaiter(),
                 new Context.ImmediateAsyncRunner());
 
-        Object res = ctx.coordinator().handle("ns", () -> "IGNORED", Context.rc("jid-3", 0));
+        Object res = ctx.coordinator().handle("ns", () -> "IGNORED", String.class, Context.rc("jid-3", 0));
 
-        assertTrue(res instanceof Ready<?>);
-        assertEquals("PAY", ((Ready<?>) res).payload());
+        assertEquals("PAY", res);
         assertEquals(key, cache.lastDeletedKey);
         assertTrue(cache.read(key, Object.class).isEmpty());
     }
@@ -137,7 +138,7 @@ class CacheBackedPollCoordinatorTest {
 
             @Override
             public void writeReady(String key, Object payload, Duration ttl) {
-                store.put(key, new Ready<>(System.currentTimeMillis(), payload));
+                store.put(key, new Ready<>(payload));
             }
 
             @Override
@@ -149,20 +150,20 @@ class CacheBackedPollCoordinatorTest {
 
         static final class ImmediateAsyncRunner implements AsyncRunner {
             @Override
-            public void run(Supplier<Object> compute, Consumer<Object> onSuccess) {
+            public <T> void run(Supplier<T> compute, Consumer<T> onSuccess) {
                 onSuccess.accept(compute.get());
             }
         }
 
         static final class DeferringAsyncRunner implements AsyncRunner {
             @Override
-            public void run(Supplier<Object> compute, Consumer<Object> onSuccess) {
+            public <T> void run(Supplier<T> compute, Consumer<T> onSuccess) {
             }
         }
 
         static final class OneShotReadyAwaiter implements ReadyAwaiter {
             @Override
-            public Optional<Ready<?>> waitReady(long waitMs, Supplier<Optional<Ready<?>>> tryConsumeReady) {
+            public <T> Optional<Ready<T>> waitReady(long waitMs, Supplier<Optional<Ready<T>>> tryConsumeReady) {
                 return tryConsumeReady.get();
             }
         }

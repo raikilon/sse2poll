@@ -4,6 +4,5 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public interface AsyncRunner {
-    void run(Supplier<Object> compute, Consumer<Object> onSuccess);
+    <T> void run(Supplier<T> compute, Consumer<T> onSuccess);
 }
-

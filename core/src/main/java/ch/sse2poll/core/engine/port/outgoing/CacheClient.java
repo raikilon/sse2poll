@@ -14,7 +14,7 @@ public interface CacheClient {
 
     void writePending(String key, String jobId, Duration ttl);
 
-    void writeReady(String key, Object payload, Duration ttl);
+    <T> void writeReady(String key, T payload, Duration ttl);
 
     void delete(String key);
 

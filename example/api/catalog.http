@@ -1,5 +1,5 @@
 ### Kick off a polled catalog lookup (no job id yet)
-GET http://localhost:8080/api/catalog/products/keyboard?waitMs=10000
+GET http://localhost:8080/api/catalog/products/keyboard?waitMs=1000
 
 ### Poll for an existing job (replace JOB_ID once returned as Pending.jobId)
-GET http://localhost:8080/api/catalog/products/keyboard?job=JOBID
+GET http://localhost:8080/api/catalog/products/keyboard?job=6e677473-e8e8-4fdf-a5b9-1df1753f4df5&waitMs=2000
