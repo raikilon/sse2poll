@@ -1,0 +1,78 @@
+<main class="page">
+  <section class="panel">
+    <p class="eyebrow">SSE2Poll demo</p>
+    <h1>Catalog lookup with polling</h1>
+
+    <p class="lead">
+      The Angular client calls
+      <code>/api/catalog/products/{{ '{' }}id{{ '}' }}</code>
+      on the Spring Boot demo.
+      The first response is a <code>202</code> containing a jobId;
+      the polling interceptor keeps calling until the final
+      <code>200</code> payload arrives.
+    </p>
+
+    <form class="controls" (submit)="fetchProduct(); $event.preventDefault()">
+      <label for="product">Product id</label>
+
+      <div class="input-row">
+        <input
+          id="product"
+          name="product"
+          list="product-options"
+          [value]="productId()"
+          (input)="onProductInput($event)"
+          placeholder="keyboard"
+          autocomplete="off"
+        />
+
+        <datalist id="product-options">
+          @for (product of availableProducts; track product) {
+            <option [value]="product"></option>
+          }
+        </datalist>
+
+        <button
+          type="submit"
+          [disabled]="productResource.status() === 'loading'"
+        >
+          Fetch with polling
+        </button>
+      </div>
+
+      <p class="hint">
+        Sent with waitMs=1000 and pollIntervalMs=400 via withPolling().
+      </p>
+    </form>
+
+    @if (productResource.status() === 'loading') {
+      <div class="status">
+        Waiting for the backend to finish…
+      </div>
+    }
+
+    @if (productResource.value(); as payload) {
+      <article class="result-card">
+        <header>
+          <p class="eyebrow success">Result ready</p>
+          <h2>{{ payload.name }}</h2>
+        </header>
+
+        <p class="muted">{{ payload.description }}</p>
+        <p class="price">
+          {{ payload.price | currency:'USD':'symbol' }}
+        </p>
+
+        <pre class="json">
+          <code>{{ payload | json }}</code>
+        </pre>
+      </article>
+    }
+
+    @if (productResource.error(); as err) {
+      <p class="error">
+        {{ formatError(err) }}
+      </p>
+    }
+  </section>
+</main>

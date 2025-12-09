@@ -1,0 +1,25 @@
+# Build outputs
+/dist/
+*.tsbuildinfo
+
+# Dependencies
+/node_modules/
+
+# Tests/coverage
+/coverage/
+
+# Package artifacts
+*.tgz
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE/editor
+.vscode/
+.idea/
+
+# OS noise
+.DS_Store
+Thumbs.db

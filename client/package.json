@@ -1,0 +1,41 @@
+{
+  "name": "@sse2poll/polling-client",
+  "version": "0.1.2",
+  "description": "Lightweight polling client for SSE2Poll backends (Angular interceptor opt-in).",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./angular": "./dist/angular/index.js",
+    "./angular/polling.interceptor": "./dist/angular/polling.interceptor.js",
+    "./angular/polling-context": "./dist/angular/polling-context.js",
+    "./angular/polling-orchestrator": "./dist/angular/polling-orchestrator.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepack": "npm run build",
+    "test": "vitest run"
+  },
+  "files": [
+    "dist"
+  ],
+  "peerDependencies": {
+    "@angular/common": "^21.0.0",
+    "@angular/core": "^21.0.0",
+    "rxjs": "^7.8.0"
+  },
+  "devDependencies": {
+    "@angular/common": "^21.0.3",
+    "@angular/compiler": "^21.0.3",
+    "@angular/core": "^21.0.3",
+    "@angular/platform-browser": "^21.0.3",
+    "@angular/platform-browser-dynamic": "^21.0.3",
+    "jsdom": "^27.3.0",
+    "rxjs": "^7.8.1",
+    "typescript": "^5.5.0",
+    "vitest": "^4.0.15",
+    "zone.js": "^0.16.0"
+  }
+}
