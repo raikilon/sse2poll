@@ -16,15 +16,11 @@ export interface NormalizedPollingOptions {
   maxPollAttempts: number | null;
 }
 
-export const DEFAULT_POLLING_OPTIONS: Required<
-  Pick<PollingOptions, 'pollIntervalMs' | 'maxPollAttempts'>
-> & {
-  waitMs?: number;
-} = {
+export const DEFAULT_POLLING_OPTIONS: NormalizedPollingOptions = {
   waitMs: undefined,
   pollIntervalMs: 250,
   maxPollAttempts: 60
-};
+} satisfies NormalizedPollingOptions;
 
 export const POLLING_CONFIG = new HttpContextToken<PollingConfig>(() => ({
   enabled: false
@@ -51,7 +47,9 @@ export function normalizePollingOptions(
   const merged = { ...DEFAULT_POLLING_OPTIONS, ...options };
 
   const waitMs =
-    merged.waitMs === undefined || Number.isNaN(merged.waitMs)
+    merged.waitMs === undefined ||
+    Number.isNaN(merged.waitMs) ||
+    merged.waitMs < 0
       ? undefined
       : Math.max(0, merged.waitMs);
 
@@ -59,17 +57,11 @@ export function normalizePollingOptions(
     ? Math.max(0, merged.pollIntervalMs)
     : DEFAULT_POLLING_OPTIONS.pollIntervalMs;
 
-  let maxPollAttempts: number | null;
-  if (merged.maxPollAttempts === null) {
-    maxPollAttempts = null;
-  } else if (Number.isFinite(merged.maxPollAttempts)) {
-    maxPollAttempts = Math.max(
-      0,
-      Math.trunc(merged.maxPollAttempts)
-    );
-  } else {
-    maxPollAttempts = DEFAULT_POLLING_OPTIONS.maxPollAttempts;
-  }
+  const maxPollAttempts =  merged.maxPollAttempts === null
+        ? null
+        : Number.isFinite(merged.maxPollAttempts)
+          ? Math.max(0, Math.trunc(merged.maxPollAttempts))
+          : DEFAULT_POLLING_OPTIONS.maxPollAttempts; 
 
   return { waitMs, pollIntervalMs, maxPollAttempts };
 }

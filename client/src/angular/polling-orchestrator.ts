@@ -36,10 +36,9 @@ export class PollingOrchestrator {
     let attempt = 0;
     let jobId = options.jobId;
 
-    while (
-      options.maxPollAttempts === null ||
-      attempt < options.maxPollAttempts
-    ) {
+    const maxAttempts = options.maxPollAttempts;
+
+    while (maxAttempts === null || attempt < maxAttempts) {
       if (options.signal?.aborted) {
         throw new PollingError('Polling aborted', 499, options.url);
       }
