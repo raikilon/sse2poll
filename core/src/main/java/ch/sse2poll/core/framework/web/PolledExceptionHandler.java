@@ -9,9 +9,6 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-/**
- * Translates polling exceptions into HTTP responses so controller methods can keep their domain return types.
- */
 @RestControllerAdvice
 public class PolledExceptionHandler {
 

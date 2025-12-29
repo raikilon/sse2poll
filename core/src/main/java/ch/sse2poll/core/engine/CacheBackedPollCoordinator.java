@@ -16,10 +16,6 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-/**
- * Poll coordinator that uses a CacheClient to persist job envelopes between
- * requests.
- */
 public class CacheBackedPollCoordinator implements PollCoordinator {
 
     private final CacheClient cacheClient;

@@ -191,9 +191,7 @@ class Sse2PollCoreTest {
         }
     }
 
-    /**
-     * Fake AsyncRunner that queues computations until tests decide to execute them.
-     */
+ 
     static class FakeAsyncRunner implements AsyncRunner {
         private final BlockingQueue<Task<?>> tasks = new LinkedBlockingQueue<>();
 

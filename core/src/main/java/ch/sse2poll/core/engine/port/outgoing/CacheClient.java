@@ -5,9 +5,6 @@ import ch.sse2poll.core.entities.model.Envelope;
 import java.time.Duration;
 import java.util.Optional;
 
-/**
- * Abstraction over the cache (Caffeine, Redis, etc.) used to store poll envelopes.
- */
 public interface CacheClient {
 
     Optional<Envelope> read(String key, Class<?> bodyType);

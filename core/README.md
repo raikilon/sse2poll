@@ -51,7 +51,7 @@ class CatalogController {
 - `ReadyAwaiter`: server-side wait loop honoring `waitMs`.
 - `KeyFactory`: combines controller namespace and job id.
 
-Override any of these by defining your own beans (e.g., swap `CacheClient` for Redis or change the async runner).
+The Caffeine cache is used for simplicity in the demo; in real deployments you likely want a distributed store (e.g., a Redis-backed `CacheClient`) so multiple pods share the same job state. Override any of these beans to plug in your own storage or async runner.
 
 ## How it works (flow)
 1) Kickoff request hits the `@PolledGet` aspect.

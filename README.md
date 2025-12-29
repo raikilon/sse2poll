@@ -2,6 +2,8 @@
 
 SSE2Poll turns slow GET endpoints into a robust long-poll workflow. The Java core library adds an `@PolledGet` annotation that orchestrates kickoff + polling with a cache and async execution; the Angular client ships a lightweight interceptor that turns `202 { jobId }` responses into hands-free polling until the payload is ready.
 
+The goal: simulate a “server-push” experience (akin to SSE) in environments where real server-sent events aren’t allowed—e.g., locked-down enterprises or proxies that only permit plain polling. SSE2Poll gives you resilient, wait-aware polling for long operations without needing native SSE support.
+
 ## Repository layout
 - `core/`: Java library for Spring/Spring Boot apps (`@PolledGet`, Caffeine-backed cache, async runner).
 - `client/`: Angular polling client (`@sse2poll/polling-client`).

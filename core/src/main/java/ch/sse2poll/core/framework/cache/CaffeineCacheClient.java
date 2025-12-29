@@ -14,9 +14,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-/**
- * CacheClient implementation backed by Caffeine.
- */
 public final class CaffeineCacheClient implements CacheClient {
 
     private final Cache<String, StoredEnvelope> cache;

@@ -17,9 +17,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
-/**
- * Spring configuration that wires the {@link CacheBackedPollCoordinator} with default collaborators.
- */
 @Configuration
 @Import(PolledExceptionHandler.class)
 public class Sse2PollAutoConfiguration {

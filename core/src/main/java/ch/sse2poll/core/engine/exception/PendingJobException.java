@@ -1,8 +1,5 @@
 package ch.sse2poll.core.engine.exception;
 
-/**
- * Thrown when a polled computation is still running and the caller should retry later.
- */
 public final class PendingJobException extends RuntimeException {
 
     private final String jobId;

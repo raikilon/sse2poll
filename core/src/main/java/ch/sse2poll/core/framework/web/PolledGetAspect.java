@@ -12,9 +12,6 @@ import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-/**
- * Aspect that routes controller methods annotated with {@link PolledGet} through the poll coordinator.
- */
 @Aspect
 @Component
 public class PolledGetAspect {
