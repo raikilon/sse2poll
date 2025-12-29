@@ -1,10 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
-import { HttpClient, HttpHeaders, HttpParams, HttpResponse } from '@angular/common/http';
-import { firstValueFrom, of, throwError } from 'rxjs';
+import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
+import { of, throwError } from 'rxjs';
 import { PollingOrchestrator } from './polling-orchestrator';
 import { PollingError } from './polling-utils';
 
-// Helper to build HttpResponse easily
 function response<T>(status: number, body: T, url = '/api/test') {
   return new HttpResponse<T>({ status, body, url });
 }
@@ -98,7 +97,7 @@ describe('PollingOrchestrator', () => {
 
     await expect(
       orchestrator.pollUntilReady({ ...baseOpts, waitMs: 123 })
-    ).rejects.toBeInstanceOf(PollingError); // fails after attempts, but we assert param usage below
+    ).rejects.toBeInstanceOf(PollingError);
 
     expect(spyGet).toHaveBeenCalled();
     const call = spyGet.mock.calls[0][1];
