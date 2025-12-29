@@ -8,9 +8,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-/**
- * Controller exposing the polled endpoint used by the demo application.
- */
 @RestController
 @RequestMapping("/api/catalog")
 public class CatalogController {
@@ -20,13 +17,7 @@ public class CatalogController {
     public CatalogController(CatalogManager catalogManager) {
         this.catalogManager = catalogManager;
     }
-
-    /**
-     * Fetch a catalog item using the {@link PolledGet} orchestration.
-     *
-     * @param productId item identifier from the in-memory catalog
-     * @return catalog item, or {@link HttpStatus#NOT_FOUND} if missing
-     */
+  
     @PolledGet
     @GetMapping("/products/{productId}")
     public ProductDetails getProduct(@PathVariable String productId) {

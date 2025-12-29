@@ -5,6 +5,5 @@ import { BrowserDynamicTestingModule, platformBrowserDynamicTesting } from '@ang
 
 const testBed = getTestBed();
 
-// Ensure Angular's testing platform is bootstrapped for all Vitest suites.
 testBed.resetTestEnvironment();
 testBed.initTestEnvironment(BrowserDynamicTestingModule, platformBrowserDynamicTesting());

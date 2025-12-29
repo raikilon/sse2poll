@@ -6,9 +6,6 @@ import java.math.BigDecimal;
 import java.util.Map;
 import java.util.Optional;
 
-/**
- * Fake in-memory storage that purposely introduces random latency to simulate a slow data store.
- */
 @Component
 public class CatalogManager {
 

@@ -16,21 +16,18 @@
       <label for="product">Product id</label>
 
       <div class="input-row">
-        <input
+        <select
           id="product"
           name="product"
-          list="product-options"
           [value]="productId()"
-          (input)="onProductInput($event)"
-          placeholder="keyboard"
-          autocomplete="off"
-        />
-
-        <datalist id="product-options">
+          (change)="onProductSelect($event)"
+        >
           @for (product of availableProducts; track product) {
-            <option [value]="product"></option>
+            <option [value]="product">
+              {{ product }}
+            </option>
           }
-        </datalist>
+        </select>
 
         <button
           type="submit"

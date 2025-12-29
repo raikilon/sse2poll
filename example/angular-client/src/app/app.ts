@@ -1,6 +1,6 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { CurrencyPipe, JsonPipe } from '@angular/common';
-import { HttpClient, HttpErrorResponse, httpResource } from '@angular/common/http';
+import { HttpErrorResponse, httpResource } from '@angular/common/http';
 import { withPolling } from '@sse2poll/polling-client/angular';
 
 interface ProductDetails {
@@ -12,40 +12,37 @@ interface ProductDetails {
 
 @Component({
   selector: 'app-root',
-  standalone: true,
   imports: [CurrencyPipe, JsonPipe],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
 export class App {
-  private readonly http = inject(HttpClient);
-
   readonly productId = signal('keyboard');
-  private readonly refreshKey = signal(-1);
+  private readonly hasFetched = signal(false);
 
   readonly availableProducts = ['keyboard', 'mouse', 'monitor', 'dock'];
 
   readonly productResource = httpResource<ProductDetails | null>(() => {
     const productId = this.productId().trim();
-    const refresh = this.refreshKey();
 
-    if (refresh < 0 || !productId) {
-      return undefined; // ✅ must be undefined, not null
+    if (!this.hasFetched() || !productId) {
+      return undefined;
     }
 
     return {
       url: `/api/catalog/products/${encodeURIComponent(productId)}`,
-      context: withPolling({ waitMs: 1000, pollIntervalMs: 400 })
+      context: withPolling({ waitMs: 1000, pollIntervalMs: 2000 })
     };
   });
 
 
   fetchProduct(): void {
-    this.refreshKey.update(v => v + 1);
+    this.hasFetched.set(true);
+    this.productResource.reload();
   }
 
-  onProductInput(event: Event): void {
-    const value = (event.target as HTMLInputElement)?.value ?? '';
+  onProductSelect(event: Event): void {
+    const value = (event.target as HTMLSelectElement)?.value ?? '';
     this.productId.set(value);
   }
 

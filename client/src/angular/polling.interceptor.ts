@@ -2,34 +2,43 @@ import { inject } from '@angular/core';
 import {
   HttpClient,
   HttpErrorResponse,
+  HttpInterceptorFn,
   HttpRequest,
-  HttpResponse,
-  HttpInterceptorFn
+  HttpResponse
 } from '@angular/common/http';
 import { from, of } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
-import { POLLING_CONFIG } from './polling-context';
+import { switchMap, finalize } from 'rxjs/operators';
+import {
+  POLLING_CONFIG,
+  normalizePollingOptions
+} from './polling-context';
 import { PollingOrchestrator } from './polling-orchestrator';
+import { extractJobId, PollingError } from './polling-utils';
 
 export const pollingInterceptor: HttpInterceptorFn = (req, next) => {
-  const orchestrator = new PollingOrchestrator(inject(HttpClient));
-  const cfg = req.context.get(POLLING_CONFIG);
-  if (!cfg.enabled) {
+  const config = req.context.get(POLLING_CONFIG);
+  if (!config.enabled) {
     return next(req);
   }
 
-  const normalized = normalizeConfig(cfg);
-  const kickoffReq = appendWaitMs(req, normalized.waitMs);
+  const http = inject(HttpClient);
+  const orchestrator = new PollingOrchestrator(http);
+
+  const normalized = normalizePollingOptions(config);
+
+  const kickoffReq =
+    normalized.waitMs === undefined
+      ? req
+      : req.clone({
+          params: req.params.set(
+            'waitMs',
+            String(normalized.waitMs)
+          )
+        });
 
   return next(kickoffReq).pipe(
     switchMap(event => {
-      if (!(event instanceof HttpResponse)) {
-        return of(event);
-      }
-      if (event.status === 200) {
-        return of(event);
-      }
-      if (event.status !== 202) {
+      if (!(event instanceof HttpResponse) || event.status !== 202) {
         return of(event);
       }
 
@@ -38,57 +47,33 @@ export const pollingInterceptor: HttpInterceptorFn = (req, next) => {
         return of(event);
       }
 
-      const promise = orchestrator
-        .pollUntilReady<any>({
-          url: req.urlWithParams,
-          jobId,
-          waitMs: normalized.waitMs,
-          pollIntervalMs: normalized.pollIntervalMs,
-          maxPollAttempts: normalized.maxPollAttempts,
-          headers: req.headers,
-          withCredentials: req.withCredentials,
-          context: req.context
-        })
-        .then(result => new HttpResponse({ status: 200, body: result.payload, url: req.urlWithParams }))
-        .catch(error => {
-          const status = (error as any)?.status ?? 0;
-          const statusText = (error as any)?.statusText ?? 'Polling failed';
-          throw new HttpErrorResponse({
-            error,
-            status,
-            statusText,
-            url: req.urlWithParams
-          });
-        });
+      const controller = new AbortController();
 
-      return from(promise);
+      return from(
+        orchestrator
+          .pollUntilReady<any>({
+            url: req.url,
+            jobId,
+            ...normalized,
+            headers: req.headers,
+            withCredentials: req.withCredentials,
+            context: req.context,
+            signal: controller.signal
+          })
+          .then(result =>
+            event.clone({
+              status: 200,
+              body: result.payload
+            })
+          )
+          .catch((error: PollingError) => {
+            throw new HttpErrorResponse({
+              error,
+              status: error.status,
+              url: error.url
+            });
+          })
+      ).pipe(finalize(() => controller.abort()));
     })
   );
 };
-
-function appendWaitMs(req: HttpRequest<unknown>, waitMs?: number): HttpRequest<unknown> {
-  if (waitMs === undefined) {
-    return req;
-  }
-  return req.clone({
-    params: req.params.set('waitMs', String(Math.max(0, waitMs)))
-  });
-}
-
-function extractJobId(body: unknown): string | undefined {
-  if (body && typeof body === 'object' && 'jobId' in body) {
-    const candidate = (body as Record<string, unknown>).jobId;
-    if (typeof candidate === 'string' && candidate.trim().length > 0) {
-      return candidate;
-    }
-  }
-  return undefined;
-}
-
-function normalizeConfig(cfg: { waitMs?: number; pollIntervalMs?: number; maxPollAttempts?: number | null }) {
-  return {
-    waitMs: cfg.waitMs === undefined ? undefined : Math.max(0, cfg.waitMs),
-    pollIntervalMs: Math.max(0, cfg.pollIntervalMs ?? 250),
-    maxPollAttempts: cfg.maxPollAttempts === null ? null : cfg.maxPollAttempts ?? 60
-  };
-}
