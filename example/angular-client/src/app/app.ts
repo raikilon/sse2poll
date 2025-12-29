@@ -17,44 +17,37 @@ interface ProductDetails {
   styleUrl: './app.css'
 })
 export class App {
-  readonly productId = signal('keyboard');
-  private readonly hasFetched = signal(false);
+  readonly productId = signal<string | null>(null);
 
   readonly availableProducts = ['keyboard', 'mouse', 'monitor', 'dock'];
 
-  readonly productResource = httpResource<ProductDetails | null>(() => {
-    const productId = this.productId().trim();
+  readonly productResource = httpResource<ProductDetails>(() => {
+    const id = this.productId();
 
-    if (!this.hasFetched() || !productId) {
+    if (!id) {
       return undefined;
     }
 
     return {
-      url: `/api/catalog/products/${encodeURIComponent(productId)}`,
-      context: withPolling({ waitMs: 1000, pollIntervalMs: 2000 })
+      url: `/api/catalog/products/${encodeURIComponent(id)}`,
+      context: withPolling({
+        waitMs: 1000,
+        pollIntervalMs: 2000
+      })
     };
   });
 
-
-  fetchProduct(): void {
-    this.hasFetched.set(true);
-    this.productResource.reload();
-  }
-
   onProductSelect(event: Event): void {
-    const value = (event.target as HTMLSelectElement)?.value ?? '';
-    this.productId.set(value);
+    const value = (event.target as HTMLSelectElement).value;
+    this.productId.set(value || null);
   }
 
   formatError(err: unknown): string {
     if (err instanceof HttpErrorResponse) {
       if (err.status === 404) {
-        return 'Product not found (404). Try keyboard/mouse/monitor/dock.';
+        return 'Product not found (404).';
       }
-      if (err.status > 0) {
-        return `Request failed with ${err.status} ${err.statusText || ''}`.trim();
-      }
-      return err.message ?? 'Request failed.';
+      return `Request failed with ${err.status} ${err.statusText || ''}`.trim();
     }
     if (err instanceof Error) {
       return err.message;

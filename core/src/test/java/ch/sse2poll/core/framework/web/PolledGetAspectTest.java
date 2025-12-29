@@ -205,7 +205,7 @@ class PolledGetAspectTest {
             int computeInvocations;
 
             @Override
-            public <T> T handle(String namespace, Supplier<T> compute, Class<T> responseType, RequestContextView requestContext) {
+            public Object handle(String namespace, Supplier<?> compute, Class<?> responseType, RequestContextView requestContext) {
                 this.namespace = namespace;
                 this.ctx = requestContext;
                 computeInvocations++;

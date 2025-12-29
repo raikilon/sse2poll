@@ -25,13 +25,13 @@ public class PolledGetAspect {
     }
 
     @Around("@annotation(polledGet)")
-    public <T> T orchestrate(ProceedingJoinPoint joinPoint, PolledGet polledGet) {
+    public Object orchestrate(ProceedingJoinPoint joinPoint, PolledGet polledGet) {
         MethodSignature methodSignature = (MethodSignature) joinPoint.getSignature();
         var method = methodSignature.getMethod();
         String namespace = method.getDeclaringClass().getSimpleName() + "#" + method.getName();
         PollCoordinator.RequestContextView requestContext = resolveRequestContext();
 
-        Class<T> returnType = resolveReturnType(methodSignature);
+        Class<?> returnType = resolveReturnType(methodSignature);
         return pollCoordinator.handle(namespace, () -> proceed(joinPoint), returnType, requestContext);
     }
 
@@ -74,18 +74,18 @@ public class PolledGetAspect {
     }
 
     @SuppressWarnings("unchecked")
-    private <T> Class<T> resolveReturnType(MethodSignature methodSignature) {
+    private Class<?> resolveReturnType(MethodSignature methodSignature) {
         Class<?> raw = methodSignature.getReturnType();
         if (raw.isPrimitive()) {
-            return (Class<T>) wrapPrimitive(raw);
+            return wrapPrimitive(raw);
         }
-        return (Class<T>) raw;
+        return raw;
     }
 
     @SuppressWarnings("unchecked")
-    private <T> T proceed(ProceedingJoinPoint joinPoint) {
+    private Object proceed(ProceedingJoinPoint joinPoint) {
         try {
-            return (T) joinPoint.proceed();
+            return joinPoint.proceed();
         } catch (Throwable throwable) {
             throw new IllegalStateException("Failed to execute polled computation", throwable);
         }

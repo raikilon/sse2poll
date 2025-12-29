@@ -4,43 +4,33 @@
     <h1>Catalog lookup with polling</h1>
 
     <p class="lead">
-      The Angular client calls
-      <code>/api/catalog/products/{{ '{' }}id{{ '}' }}</code>
-      on the Spring Boot demo.
-      The first response is a <code>202</code> containing a jobId;
-      the polling interceptor keeps calling until the final
-      <code>200</code> payload arrives.
+      Select a product to automatically fetch and poll until ready.
     </p>
 
-    <form class="controls" (submit)="fetchProduct(); $event.preventDefault()">
-      <label for="product">Product id</label>
+    <div class="controls">
+      <label for="product">Product</label>
 
       <div class="input-row">
         <select
           id="product"
           name="product"
-          [value]="productId()"
+          [value]="productId() ?? ''"
           (change)="onProductSelect($event)"
         >
+          <option value="">— Select a product —</option>
+
           @for (product of availableProducts; track product) {
             <option [value]="product">
               {{ product }}
             </option>
           }
         </select>
-
-        <button
-          type="submit"
-          [disabled]="productResource.status() === 'loading'"
-        >
-          Fetch with polling
-        </button>
       </div>
 
       <p class="hint">
-        Sent with waitMs=1000 and pollIntervalMs=400 via withPolling().
+        Polling begins automatically for the selected product.
       </p>
-    </form>
+    </div>
 
     @if (productResource.status() === 'loading') {
       <div class="status">
@@ -61,7 +51,7 @@
         </p>
 
         <pre class="json">
-          <code>{{ payload | json }}</code>
+<code>{{ payload | json }}</code>
         </pre>
       </article>
     }

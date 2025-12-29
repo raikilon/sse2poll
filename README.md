@@ -27,4 +27,4 @@ The goal: simulate a “server-push” experience (akin to SSE) in environments 
 4. Open `http://localhost:4200`, choose a product, and watch the long-running request resolve via polling. Screenshots live in `example/angular-client/README.md`.
 - API-only quick test: open `example/api/catalog.http` in an HTTP client (VS Code REST Client, IntelliJ HTTP, or curl), kick off the catalog request, then paste the returned `jobId` into the poll request to see the 202→200 transition without the UI.
 
-![demo example](image.png)
+![demo example](demo-example.png)

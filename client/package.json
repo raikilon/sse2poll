@@ -1,6 +1,6 @@
 {
   "name": "@sse2poll/polling-client",
-  "version": "0.1.2",
+  "version": "0.1.0",
   "description": "Lightweight polling client for SSE2Poll backends (Angular interceptor opt-in).",
   "private": true,
   "type": "module",

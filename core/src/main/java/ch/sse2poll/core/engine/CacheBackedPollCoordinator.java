@@ -38,10 +38,10 @@ public class CacheBackedPollCoordinator implements PollCoordinator {
     }
 
     @Override
-    public <T> T handle(
+    public Object handle(
             String namespace,
-            Supplier<T> compute,
-            Class<T> responseType,
+            Supplier<?> compute,
+            Class<?> responseType,
             RequestContextView requestContext) {
         String clientJobId = requestContext.clientJobId();
         long waitMs = requestContext.waitMs();
@@ -52,13 +52,13 @@ public class CacheBackedPollCoordinator implements PollCoordinator {
         return handleKickoff(namespace, waitMs, compute, responseType);
     }
 
-    private <T> T handlePoll(String namespace, String jobId, long waitMs, Class<T> responseType) {
+    private Object handlePoll(String namespace, String jobId, long waitMs, Class<?> responseType) {
         String key = keyFactory.build(namespace, jobId);
 
         return returnReadyOrPending(key, jobId, waitMs, responseType);
     }
 
-    private <T> T handleKickoff(String namespace, long waitMs, Supplier<T> compute, Class<T> responseType) {
+    private Object handleKickoff(String namespace, long waitMs, Supplier<?> compute, Class<?> responseType) {
         String jobId = idGenerator.newId();
         String key = keyFactory.build(namespace, jobId);
 
@@ -69,24 +69,25 @@ public class CacheBackedPollCoordinator implements PollCoordinator {
         return returnReadyOrPending(key, jobId, waitMs, responseType);
     }
 
-    private <T> Optional<Ready<T>> waitForReady(String key, long waitMs, Class<T> responseType) {
+    private Optional<Ready<?>> waitForReady(String key, long waitMs, Class<?> responseType) {
         return readyAwaiter.waitReady(waitMs, () -> {
             Optional<Envelope> again = cacheClient.read(key, Object.class);
             if (again.isPresent() && again.get() instanceof Ready<?> r) {
-                return Optional.of(castReady(r, responseType));
+                Ready<?> cast = castReady(r, responseType);
+                return Optional.of(cast);
             }
             return Optional.empty();
-        });
+        }).map(r -> (Ready<?>) r);
     }
 
-    private <T> T returnReadyOrPending(String key, String jobId, long waitMs, Class<T> responseType) {
+    private Object returnReadyOrPending(String key, String jobId, long waitMs, Class<?> responseType) {
         Optional<Envelope> cached = cacheClient.read(key, Object.class);
         if (cached.isEmpty()) {
             throw new UnknownJobException(jobId);
         }
 
         if (waitMs > 0) {
-            Optional<Ready<T>> ready = waitForReady(key, waitMs, responseType);
+            Optional<Ready<?>> ready = waitForReady(key, waitMs, responseType);
             if (ready.isPresent()) {
                 return consumeReady(key, ready.get());
             }
@@ -103,12 +104,12 @@ public class CacheBackedPollCoordinator implements PollCoordinator {
         throw new IllegalStateException("Unsupported envelope type: " + envelope.getClass().getName());
     }
 
-    private <T> T consumeReady(String key, Ready<T> ready) {
+    private Object consumeReady(String key, Ready<?> ready) {
         cacheClient.delete(key);
         return ready.payload();
     }
 
-    private <T> Ready<T> castReady(Ready<?> ready, Class<T> responseType) {
+    private Ready<?> castReady(Ready<?> ready, Class<?> responseType) {
         Object payload = ready.payload();
         if (!responseType.isInstance(payload)) {
             throw new ClassCastException("Cached payload of type "

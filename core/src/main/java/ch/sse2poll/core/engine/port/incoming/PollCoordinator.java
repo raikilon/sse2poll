@@ -5,10 +5,10 @@ import java.util.function.Supplier;
 
 public interface PollCoordinator {
 
-    <T> T handle(String namespace,
-                 Supplier<T> compute,
-                 Class<T> responseType,
-                 RequestContextView requestContext);
+    Object handle(String namespace,
+                  Supplier<?> compute,
+                  Class<?> responseType,
+                  RequestContextView requestContext);
 
     interface RequestContextView {
         String clientJobId();
