@@ -31,7 +31,7 @@ public class PolledGetAspect {
         String namespace = method.getDeclaringClass().getSimpleName() + "#" + method.getName();
         PollCoordinator.RequestContextView requestContext = resolveRequestContext();
 
-        Class<?> returnType = resolveReturnType(methodSignature);
+        Class<?> returnType = methodSignature.getReturnType();
         return pollCoordinator.handle(namespace, () -> proceed(joinPoint), returnType, requestContext);
     }
 
@@ -73,35 +73,12 @@ public class PolledGetAspect {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private Class<?> resolveReturnType(MethodSignature methodSignature) {
-        Class<?> raw = methodSignature.getReturnType();
-        if (raw.isPrimitive()) {
-            return wrapPrimitive(raw);
-        }
-        return raw;
-    }
-
-    @SuppressWarnings("unchecked")
     private Object proceed(ProceedingJoinPoint joinPoint) {
         try {
             return joinPoint.proceed();
         } catch (Throwable throwable) {
             throw new IllegalStateException("Failed to execute polled computation", throwable);
         }
-    }
-
-    private Class<?> wrapPrimitive(Class<?> primitive) {
-        if (primitive == boolean.class) return Boolean.class;
-        if (primitive == byte.class) return Byte.class;
-        if (primitive == short.class) return Short.class;
-        if (primitive == int.class) return Integer.class;
-        if (primitive == long.class) return Long.class;
-        if (primitive == float.class) return Float.class;
-        if (primitive == double.class) return Double.class;
-        if (primitive == char.class) return Character.class;
-        if (primitive == void.class) return Void.class;
-        return primitive;
     }
 
     private record ImmutableRequestContext(String clientJobId, long waitMs)
